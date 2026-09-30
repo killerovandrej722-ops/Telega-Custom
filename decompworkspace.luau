@@ -4585,7 +4585,7 @@ local function synsaveinstance(...)
 			end
 		end
 
-		value = "-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw\n\n"
+		value = "-- Saved by Killer Decompler\n\n"
 			.. (hasLinkedSource and "-- Original Source: https://assetdelivery.roblox.com/v1/asset/?" .. (LinkedSource_type or "id") .. "=" .. (LinkedSource or LinkedSource_Url) .. "\n\n" or "")
 			.. value
 
