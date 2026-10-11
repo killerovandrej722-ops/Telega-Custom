@@ -3707,12 +3707,11 @@ local function synsaveinstance(...)
 		IgnorePropertiesOfNotScriptsOnScriptsMode = false,
 		IgnoreSpecialProperties = false,
 
-		IsolateLocalPlayer = true, --  #service.StarterGui:GetChildren() == 0
+		IsolateLocalPlayer = false, --  #service.StarterGui:GetChildren() == 0
 		IsolateLocalPlayerCharacter = false,
 		IsolatePlayers = false,
 		IsolateStarterPlayer = false,
 		SavePlayerCharacters = false,
-        IsolatePlayers = true,
 
 		SaveNotCreatable = false,
 		NotCreatableFixes = {
