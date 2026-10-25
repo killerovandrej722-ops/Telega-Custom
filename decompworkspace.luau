@@ -3776,7 +3776,7 @@ local function synsaveinstance(...)
 		IsolateLocalPlayerCharacter = false,
 		IsolatePlayers = false,
 		IsolateStarterPlayer = false,
-		SavePlayerCharacters = false,
+		SavePlayerCharacters = true,
 
 		SaveNotCreatable = false,
 		NotCreatableFixes = {
