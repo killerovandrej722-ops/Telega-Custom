@@ -1,7 +1,6 @@
 --!native
 --!optimize 2
 --!divine-intellect
---
 
 local function string_find(s, pattern, init)
 	return string.find(s, pattern, init, true)
@@ -2071,6 +2070,11 @@ do
 		return buffer.tostring(bytes)
 	end
 
+	--[[
+		For more info:
+		- https://github.com/luau/UniversalSynSaveInstance/blob/main/Tools/NotScriptable-Related/Potentially%20Missing%20Properties%20Dumper/Potentially%20Missing%20Properties%20Dumper.luau
+		- https://github.com/luau/UniversalSynSaveInstance/blob/main/Tools/NotScriptable-Related/NotScriptable%20Dumper/NotScriptable%20Dumper.py
+		]]
 	local NotScriptableFixes = {
 		Instance = {
 			AttributesSerialize = function(instance)
@@ -3810,7 +3814,6 @@ local function synsaveinstance(...)
 		SharedBinaryStrings = false,
 		TreatUnionsAsParts = false,
 		AlternativeWritefile = true,
-        RemoveHighlights = true
 
 		OptionsAliases = { -- You can't really modify these as a user (because they're read before user's Options are loaded)
 			Clipboard = "CopyToClipboard",
@@ -5596,7 +5599,7 @@ local function synsaveinstance(...)
 		local chunks = table.create(1)
 		local savebuffer, savebuffer_size = {}, 1
 		local header =
-			'<!-- Saved by Killer Decompiler --><roblox version="4">'
+			'<!-- Saved by Killer decomp --><roblox version="4">'
 		local refs = ctx.refs
 
 		local function ReturnProperty(tag, propertyName, value)
@@ -6837,51 +6840,25 @@ local function synsaveinstance(...)
 			end
 		end
 	end
-
 	local old_gethiddenproperty
 	if OPTIONS.IgnoreSpecialProperties and gethiddenproperty then
 		old_gethiddenproperty = gethiddenproperty
 		gethiddenproperty = nil
 	end
 
-    if OPTIONS.RemoveHighlights then
-		IgnoreList.SelectionBox = true
+	IgnoreList.Highlight = true
+	IgnoreList.SelectionBox = true
 
-		local removed = 0
-		local roots = { workspace, service.Lighting, service.ReplicatedStorage, service.StarterGui }
-
-		local lp = service.Players.LocalPlayer
-		if lp then
-			local pg = lp:FindFirstChildOfClass("PlayerGui")
-			if pg then
-				roots[#roots + 1] = pg
-			end
-		end
-
-		for _, root in roots do
-			if root then
-				for _, v in root:GetDescendants() do
-					local shouldRemove = v:IsA("SelectionBox")
-					if v:IsA("Highlight") then
-						local c = v.FillColor
-						shouldRemove = c.R > 0.8 and c.G < 0.3 and c.B < 0.3
-					end
-					if shouldRemove then
-						pcall(function()
-							v.Enabled = false
-						end)
-						pcall(function()
-							v:Destroy()
-						end)
-						removed += 1
-						yieldIfDue()
-					end
+	for _, root in { workspace, service.Lighting, service.ReplicatedStorage, service.StarterGui } do
+		if root then
+			for _, v in root:GetDescendants() do
+				if v:IsA("Highlight") or v:IsA("SelectionBox") then
+					pcall(function()
+						v:Destroy()
+					end)
+					yieldIfDue()
 				end
 			end
-		end
-
-		if __DEBUG_MODE then
-			__DEBUG_MODE("Removed highlights:", removed)
 		end
 	end
 
