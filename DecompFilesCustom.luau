@@ -13,10 +13,9 @@ local COL_ROW_SEL = Color3.fromRGB(58, 58, 62)
 local COL_TEXT    = Color3.fromRGB(235, 235, 235)
 local COL_DIM     = Color3.fromRGB(150, 150, 150)
 local COL_LINE    = Color3.fromRGB(52, 52, 55)
-local COL_ACCENT  = Color3.fromRGB(220, 220, 220)
 
-local Players  = game:GetService("Players")
-local CoreGui  = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "Decompile_" .. tostring(math.random(1e6, 9e6))
@@ -36,6 +35,30 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
 local stroke = Instance.new("UIStroke", frame)
 stroke.Color = COL_LINE
 stroke.Thickness = 1
+
+-- drag
+do
+	local dragging = false
+	local dragStart, startPos
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+	frame.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
 
 -- ============ HEADER ============
 local header = Instance.new("Frame")
@@ -99,8 +122,7 @@ searchBox.ClearTextOnFocus = false
 searchBox.Parent = frame
 Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 4)
 
-local searchPad = Instance.new("UIPadding", searchBox)
-searchPad.PaddingLeft = UDim.new(0, 10)
+Instance.new("UIPadding", searchBox).PaddingLeft = UDim.new(0, 10)
 
 -- ============ LIST ============
 local scroll = Instance.new("ScrollingFrame")
@@ -148,12 +170,14 @@ end)
 
 -- ============ ROWS ============
 local rowCount = 0
+local rows = {}
+
 local function nextOrder()
 	rowCount += 1
 	return rowCount
 end
 
-local function createRow(instance, depth, parentFrame)
+local function createRow(instance, depth, parentFrame, parentRow)
 	local container = Instance.new("Frame")
 	container.Size = UDim2.new(1, 0, 0, 26)
 	container.AutomaticSize = Enum.AutomaticSize.Y
@@ -210,7 +234,7 @@ local function createRow(instance, depth, parentFrame)
 	nameLabel.TextColor3 = COL_TEXT
 	nameLabel.Parent = rowFrame
 
-	local function refreshLabel()
+	-- класс в скобках, только если отличается от имени (нет дублей "Workspace Workspace")
 	local cls = instance.ClassName
 	local name = instance.Name
 	if cls ~= name then
@@ -218,8 +242,16 @@ local function createRow(instance, depth, parentFrame)
 	else
 		nameLabel.Text = name
 	end
-end
-	refreshLabel()
+
+	local row = {
+		instance = instance,
+		container = container,
+		parentRow = parentRow,
+		selfMatch = false,
+		childMatch = false,
+		userExpanded = false,
+	}
+	table.insert(rows, row)
 
 	rowFrame.MouseEnter:Connect(function()
 		if not selected[instance] then
@@ -244,14 +276,6 @@ end
 		end
 	end)
 
-	local function applySearch(query)
-		local q = string.lower(query)
-		local matches = query == ""
-			or string.find(string.lower(instance.Name), q, 1, true) ~= nil
-			or string.find(string.lower(instance.ClassName), q, 1, true) ~= nil
-		container.Visible = matches
-	end
-
 	-- children
 	local childrenFrame = Instance.new("Frame")
 	childrenFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -260,60 +284,53 @@ end
 	childrenFrame.LayoutOrder = 2
 	childrenFrame.Visible = false
 	childrenFrame.Parent = container
+	row.childrenFrame = childrenFrame
 
 	local clayout = Instance.new("UIListLayout")
 	clayout.SortOrder = Enum.SortOrder.LayoutOrder
 	clayout.Padding = UDim.new(0, 2)
 	clayout.Parent = childrenFrame
 
-	local children = instance:GetChildren()
-	local expanded = false
-	local loaded = false
-
-	if #children > 0 then
+	local hasChildren = #instance:GetChildren() > 0
+	if hasChildren then
 		arrow.Text = ">"
 	end
 
-	-- стрелка кликабельна отдельно через прозрачную кнопку поверх
 	local arrowBtn = Instance.new("TextButton")
 	arrowBtn.Size = UDim2.new(0, 40, 1, 0)
 	arrowBtn.Position = UDim2.new(0, leftPad, 0, 0)
 	arrowBtn.BackgroundTransparency = 1
 	arrowBtn.Text = ""
 	arrowBtn.Parent = rowFrame
+	row.arrow = arrow
+	row.hasChildren = hasChildren
 
 	arrowBtn.MouseButton1Click:Connect(function()
-		if #children == 0 then return end
-		if expanded then
-			expanded = false
-			childrenFrame.Visible = false
-			arrow.Text = ">"
-		else
-			expanded = true
-			childrenFrame.Visible = true
-			arrow.Text = "v"
-			if not loaded then
-				loaded = true
-				for i, child in children do
-					createRow(child, depth + 1, childrenFrame)
-					if i % 100 == 0 then
-						task.wait()
-					end
-				end
-			end
-		end
+		if not hasChildren then return end
+		row.userExpanded = not row.userExpanded
+		childrenFrame.Visible = row.userExpanded
+		arrow.Text = row.userExpanded and "v" or ">"
 	end)
 
-	return container, applySearch
+	return row
 end
 
-local searchFilters = {}
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	local query = searchBox.Text
-	for _, fn in searchFilters do
-		fn(query)
+-- ============ BUILD TREE (eager, чтобы поиск работал вглубь) ============
+local function buildChildren(row, instance, depth)
+	local i = 0
+	for _, child in instance:GetChildren() do
+		i += 1
+		local childRow = createRow(child, depth + 1, row.childrenFrame, row)
+		buildChildren(childRow, child, depth + 1)
+		if i % 100 == 0 then
+			task.wait()
+		end
 	end
-end)
+	if #instance:GetChildren() > 0 then
+		row.arrow.Text = ">"
+		row.hasChildren = true
+	end
+end
 
 local roots = {
 	game:GetService("Workspace"),
@@ -331,13 +348,54 @@ if pg then
 	table.insert(roots, pg)
 end
 
-for _, root in roots do
-	local _, applySearch = createRow(root, 0, scroll)
-	if applySearch then
-		table.insert(searchFilters, applySearch)
+task.spawn(function()
+	for _, root in roots do
+		local row = createRow(root, 0, scroll, nil)
+		buildChildren(row, root, 0)
+		task.wait()
+	end
+end)
+
+-- ============ SEARCH ============
+local function refreshSearch(query)
+	local q = string.lower(query)
+
+	-- проход 1: метим совпадения по имени/классу
+	for _, r in rows do
+		r.childMatch = false
+		if q == "" then
+			r.selfMatch = false
+		else
+			local n = string.lower(r.instance.Name)
+			local c = string.lower(r.instance.ClassName)
+			r.selfMatch = string.find(n, q, 1, true) ~= nil or string.find(c, q, 1, true) ~= nil
+		end
+	end
+
+	-- проход 2: снизу вверх раскрываем родителей совпадений
+	for i = #rows, 1, -1 do
+		local r = rows[i]
+		local vis
+		if q == "" then
+			vis = true
+			r.childrenFrame.Visible = r.userExpanded
+		else
+			vis = r.selfMatch or r.childMatch
+			r.childrenFrame.Visible = vis
+			r.arrow.Text = r.hasChildren and "v" or ""
+		end
+		r.container.Visible = vis
+		if vis and r.parentRow then
+			r.parentRow.childMatch = true
+		end
 	end
 end
 
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	refreshSearch(searchBox.Text)
+end)
+
+-- ============ START ============
 startBtn.MouseButton1Click:Connect(function()
 	local list = {}
 	for inst in selected do
