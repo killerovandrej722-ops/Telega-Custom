@@ -1,7 +1,6 @@
 --!native
 --!optimize 2
 --!divine-intellect
--- https://discord.gg/wx4ThpAsmw
 
 local function string_find(s, pattern, init)
 	return string.find(s, pattern, init, true)
@@ -2071,11 +2070,6 @@ do
 		return buffer.tostring(bytes)
 	end
 
-	--[[
-		For more info:
-		- https://github.com/luau/UniversalSynSaveInstance/blob/main/Tools/NotScriptable-Related/Potentially%20Missing%20Properties%20Dumper/Potentially%20Missing%20Properties%20Dumper.luau
-		- https://github.com/luau/UniversalSynSaveInstance/blob/main/Tools/NotScriptable-Related/NotScriptable%20Dumper/NotScriptable%20Dumper.py
-		]]
 	local NotScriptableFixes = {
 		Instance = {
 			AttributesSerialize = function(instance)
@@ -5600,7 +5594,7 @@ local function synsaveinstance(...)
 		local chunks = table.create(1)
 		local savebuffer, savebuffer_size = {}, 1
 		local header =
-			'<!-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw --><roblox version="4">'
+			'<!-- Saved by Killer Decompiler --><roblox version="4">'
 		local refs = ctx.refs
 
 		local function ReturnProperty(tag, propertyName, value)
@@ -6881,23 +6875,32 @@ local function synsaveinstance(...)
 		warn(err)
 	end
 	if StatusText then
-		task.spawn(function()
-			if ok then
-				StatusText.Text = string.format("Saved! Time %.3f seconds; Size %s", elapse_t, get_size_format())
-				StatusText.TextColor3 = Color3.new(0, 1)
-				task.wait(Log10 * 2 + ExtraTime)
-			else
-				if LoadingThread then
-					task.cancel(LoadingThread)
-					LoadingThread = nil
-				end
-				StatusText.Text = "Failed! Check F9 console for more info"
-				StatusText.TextColor3 = Color3.new(1)
-				task.wait(Log10 + ExtraTime)
-			end
-			StatusText:Destroy()
-		end)
-	end
+    task.spawn(function()
+        local placeDisplayName = cachedPlaceName and tostring(cachedPlaceName) or tostring(game.PlaceId)
+        if ok then
+            StatusText.Text = string.format(
+                "\"%s\" has been Saved! Time %.3f seconds; Size %s",
+                placeDisplayName,
+                elapse_t,
+                get_size_format()
+            )
+            StatusText.TextColor3 = Color3.new(0, 1)
+            task.wait(Log10 * 2 + ExtraTime)
+        else
+            if LoadingThread then
+                task.cancel(LoadingThread)
+                LoadingThread = nil
+            end
+            StatusText.Text = string.format(
+                "\"%s\" Saving Failed! Check F9 console for more info",
+                placeDisplayName
+            )
+            StatusText.TextColor3 = Color3.new(1)
+            task.wait(Log10 + ExtraTime)
+        end
+        StatusText:Destroy()
+    end)
+end
 
 	if OPTIONS.ShutdownWhenDone and ok then
 		task.wait(Log10 * 2 + ExtraTime)
