@@ -3809,6 +3809,7 @@ local function synsaveinstance(...)
 		SharedBinaryStrings = false,
 		TreatUnionsAsParts = false,
 		AlternativeWritefile = true,
+        RemoveHighlights = true
 
 		OptionsAliases = { -- You can't really modify these as a user (because they're read before user's Options are loaded)
 			Clipboard = "CopyToClipboard",
@@ -6835,10 +6836,52 @@ local function synsaveinstance(...)
 			end
 		end
 	end
+
 	local old_gethiddenproperty
 	if OPTIONS.IgnoreSpecialProperties and gethiddenproperty then
 		old_gethiddenproperty = gethiddenproperty
 		gethiddenproperty = nil
+	end
+
+    if OPTIONS.RemoveHighlights then
+		IgnoreList.SelectionBox = true
+
+		local removed = 0
+		local roots = { workspace, service.Lighting, service.ReplicatedStorage, service.StarterGui }
+
+		local lp = service.Players.LocalPlayer
+		if lp then
+			local pg = lp:FindFirstChildOfClass("PlayerGui")
+			if pg then
+				roots[#roots + 1] = pg
+			end
+		end
+
+		for _, root in roots do
+			if root then
+				for _, v in root:GetDescendants() do
+					local shouldRemove = v:IsA("SelectionBox")
+					if v:IsA("Highlight") then
+						local c = v.FillColor
+						shouldRemove = c.R > 0.8 and c.G < 0.3 and c.B < 0.3
+					end
+					if shouldRemove then
+						pcall(function()
+							v.Enabled = false
+						end)
+						pcall(function()
+							v:Destroy()
+						end)
+						removed += 1
+						yieldIfDue()
+					end
+				end
+			end
+		end
+
+		if __DEBUG_MODE then
+			__DEBUG_MODE("Removed highlights:", removed)
+		end
 	end
 
 	elapse_t = os.clock()
