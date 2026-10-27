@@ -211,8 +211,14 @@ local function createRow(instance, depth, parentFrame)
 	nameLabel.Parent = rowFrame
 
 	local function refreshLabel()
-		nameLabel.Text = '<font color="rgb(150,150,150)">' .. instance.ClassName .. "</font>  " .. instance.Name
+	local cls = instance.ClassName
+	local name = instance.Name
+	if cls ~= name then
+		nameLabel.Text = '<font color="rgb(150,150,150)">[' .. cls .. "]</font> " .. name
+	else
+		nameLabel.Text = name
 	end
+end
 	refreshLabel()
 
 	rowFrame.MouseEnter:Connect(function()
