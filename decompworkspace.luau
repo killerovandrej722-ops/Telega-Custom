@@ -1,6 +1,7 @@
 --!native
 --!optimize 2
 --!divine-intellect
+--
 
 local function string_find(s, pattern, init)
 	return string.find(s, pattern, init, true)
