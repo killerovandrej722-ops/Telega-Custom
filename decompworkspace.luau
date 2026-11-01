@@ -3727,9 +3727,12 @@ local function updateProgressBar()
 	if TotalDecompile <= 0 then return end
 	local r = math.clamp(DoneDecompile / TotalDecompile, 0, 1)
 	ProgressBarFill.Size = UDim2.new(r, 0, 1, 0)
-	ProgressBarFill.BackgroundColor3 = r >= 1
-			and Color3.fromRGB(100, 220, 100)
-		or Color3.fromRGB(90, 170, 255)
+	
+	if r >= 1 then
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(50, 200, 100) -- Спокойный зеленый при завершении
+	else
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255):Lerp(Color3.fromRGB(120, 50, 200), r)
+	end
 end
 
 	local OPTIONS = {
@@ -4694,10 +4697,7 @@ end
 		-- Тонкая обёртка: инкремент прогресса поверх _ldecompile_impl
 		ldecompile = function(script)
 			if StatusText and TotalDecompile > 0 then
-				StatusText.Text = string.format(
-					"Decompiling: %s (%d/%d)",
-					script.Name, DoneDecompile, TotalDecompile
-				)
+				StatusText.Text = string.format("Analyzing script: %s (%d/%d)", script.Name, DoneDecompile, TotalDecompile)
 			end
 			local result = _ldecompile_impl(script)
 			DoneDecompile += 1
@@ -5394,7 +5394,7 @@ end
 				local now = os.clock()
 				if now - lastStatus > 1 then
 					lastStatus = now
-					StatusText.Text = "Saving.. Size: " .. get_size_format()
+					StatusText.Text = "Compiling data: " .. get_size_format()
 					yieldFrame()
 				end
 			end
@@ -6196,7 +6196,7 @@ end
 				end
 				written += batchSize
 				run_with_loading(
-					"Writing to File " .. math.round(written / totalsize * 100) .. "%",
+					"Writing to disk: " .. math.round(written / totalsize * 100) .. "%",
 					nil,
 					false,
 					appendfile,
@@ -6358,36 +6358,41 @@ end
 
 		StatusText = Instance.new("TextLabel")
 
-		StatusText.Text = "Saving..."
-
+				StatusText.Text = "Initializing..."
 		StatusText.BackgroundTransparency = 1
-		StatusText.Font = Enum.Font.Code
+		StatusText.Font = Enum.Font.GothamMedium -- Строгий, современный шрифт
 		StatusText.AnchorPoint = Vector2.new(1)
-		StatusText.Position = UDim2.new(1)
-		StatusText.Size = UDim2.new(0.3, 0, 0, 20)
+		StatusText.Position = UDim2.new(1, -15, 0, 15) 
+		StatusText.Size = UDim2.new(0.4, 0, 0, 20)
 
-		StatusText.TextColor3 = Color3.new(1, 1, 1)
+		StatusText.TextColor3 = Color3.fromRGB(230, 230, 230) -- Мягкий белый
 		StatusText.TextScaled = true
-		StatusText.TextStrokeTransparency = 0.7
+		StatusText.TextStrokeTransparency = 0.5
 		StatusText.TextXAlignment = Enum.TextXAlignment.Right
 		StatusText.TextYAlignment = Enum.TextYAlignment.Top
 
 		StatusText.Parent = StatusGui
 
-		-- NEW: progress bar
+		-- Чистый прогресс-бар
 		ProgressBarBg = Instance.new("Frame")
-		ProgressBarBg.Size = UDim2.new(0.3, 0, 0, 4)
-		ProgressBarBg.Position = UDim2.new(1, 0, 0, 22)
+		ProgressBarBg.Size = UDim2.new(0.4, 0, 0, 4)
+		ProgressBarBg.Position = UDim2.new(1, -15, 0, 35)
 		ProgressBarBg.AnchorPoint = Vector2.new(1, 0)
-		ProgressBarBg.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+		ProgressBarBg.BackgroundColor3 = Color3.fromRGB(35, 35, 40) -- Темно-серый фон
 		ProgressBarBg.BorderSizePixel = 0
 		ProgressBarBg.Parent = StatusGui
+		
+		local corner = Instance.new("UICorner", ProgressBarBg)
+		corner.CornerRadius = UDim.new(1, 0)
 
 		ProgressBarFill = Instance.new("Frame")
 		ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
-		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(90, 170, 255)
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- Спокойный синий
 		ProgressBarFill.BorderSizePixel = 0
 		ProgressBarFill.Parent = ProgressBarBg
+		
+		local fillCorner = Instance.new("UICorner", ProgressBarFill)
+		fillCorner.CornerRadius = UDim.new(1, 0)
 
 		local function randomString()
 			local length = math.random(10, 20)
@@ -6662,7 +6667,7 @@ end
 
 					if StatusText and not statusShown then
 						statusShown = true
-						StatusText.Text = "GHP test. Crash = rerun script few times"
+						StatusText.Text = "GHP Verification. If the game crashes, please re-execute the script or wait"
 						ensureTextRendered()
 					end
 					local ok, passed = pcall(check.test)
@@ -6968,14 +6973,14 @@ end
 	if StatusText then
     task.spawn(function()
         local placeDisplayName = cachedPlaceName and tostring(cachedPlaceName) or tostring(game.PlaceId)
-        if ok then
+                if ok then
             StatusText.Text = string.format(
-                "\"%s\" has been Saved! Time %.3f seconds; Size %s",
+                "Successfully saved %s. Time: %.3fs. Size: %s",
                 placeDisplayName,
                 elapse_t,
                 get_size_format()
             )
-            StatusText.TextColor3 = Color3.new(0, 1)
+            StatusText.TextColor3 = Color3.fromRGB(50, 200, 100) -- Спокойный зеленый
             task.wait(Log10 * 2 + ExtraTime)
         else
             if LoadingThread then
@@ -6983,10 +6988,10 @@ end
                 LoadingThread = nil
             end
             StatusText.Text = string.format(
-                "\"%s\" Saving Failed! Check F9 console for more info",
+                "Failed to save %s. Check the F9 console for details.",
                 placeDisplayName
             )
-            StatusText.TextColor3 = Color3.new(1)
+            StatusText.TextColor3 = Color3.fromRGB(220, 50, 50) -- Спокойный красный
             task.wait(Log10 + ExtraTime)
         end
         StatusText:Destroy()
