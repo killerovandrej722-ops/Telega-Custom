@@ -2,7 +2,7 @@ local Params = {
 	RepoURL = "https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/",
 	SSI = "decompworkspace",
 }
-local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
+local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau?v=111", true), Params.SSI)()
 
 local selected = {}
 
