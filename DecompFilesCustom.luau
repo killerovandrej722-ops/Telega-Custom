@@ -403,17 +403,11 @@ startBtn.MouseButton1Click:Connect(function()
 	mode = "custom",
 	ExtraInstances = list,
 	IsModel = false,
-
-	-- было SafeMode = true → он вручную вешал все скрипты игры
-	SafeMode = false,
 	KillAllScripts = false,     -- явно, на случай если кто-то поменяет SafeMode
-
 	BoostFPS = true,            -- отключает 3D-рендер на время сохранения (безвредно)
-
 	Decompile = true,
 	DecompileTimeout = 2,       -- было 10; 2 сек достаточно для большинства скриптов
 	BytecodeTimeout = 1,
-
 	-- оставь только если LocalPlayer реально в списке selected:
 	IsolateLocalPlayer = true,
 })
