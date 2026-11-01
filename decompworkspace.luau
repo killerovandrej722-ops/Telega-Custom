@@ -4631,21 +4631,17 @@ end
 			updateProgressBar()
 			return "-- Decompiling is disabled"
 		end
-	elseif decompile then
+		elseif decompile then
 		local decomp = makeTimeoutHandler(OPTIONS.DecompileTimeout, decompile, "Decompiler timed out")
 
-		ldecompile = function(script)
-            local result = _ldecompile_impl(script)
-			DoneDecompile += 1
-			updateProgressBar()
-			return result
+		-- Внутренняя реализация: старое тело без изменений
+		local _ldecompile_impl = function(script)
 			-- local name = scr.ClassName .. scr.Name
 			local bytecode
 			if ScriptCache then
 				local s
 				s, bytecode = getbytecode(script)
 				local cached
-
 
 				if s then
 					if not bytecode or bytecode == "" then
@@ -4685,8 +4681,8 @@ end
 				output = "--[[ Failed to decompile. Reason:\n" .. (result or "") .. "\n]]"
 			end
 
-			if ScriptCache and bytecode then -- TODO there might(?) be an edgecase where it manages to decompile (built-in) even though getscriptbytecode failed, and the output won't get cached
-				ldeccache[bytecode] = output -- ? Should we cache even if it timed out?
+			if ScriptCache and bytecode then
+				ldeccache[bytecode] = output
 				if __DEBUG_MODE then
 					__DEBUG_MODE("Cached", script:GetFullName())
 				end
@@ -4694,13 +4690,21 @@ end
 
 			return output
 		end
-	else
-		ldecompile = function()
-            DoneDecompile += 1
+
+		-- Тонкая обёртка: инкремент прогресса поверх _ldecompile_impl
+		ldecompile = function(script)
+			if StatusText and TotalDecompile > 0 then
+				StatusText.Text = string.format(
+					"Decompiling: %s (%d/%d)",
+					script.Name, DoneDecompile, TotalDecompile
+				)
+			end
+			local result = _ldecompile_impl(script)
+			DoneDecompile += 1
 			updateProgressBar()
-			return "-- Your Executor does NOT have a Decompiler"
+			return result
 		end
-	end
+	else
 
 	local RecoverScriptsFromAssets = OPTIONS.RecoverScriptsFromAssets
 	local sourceAssetCache = {}
