@@ -309,30 +309,22 @@ local function createRow(instance, depth, parentFrame, parentRow)
 	if not hasChildren then return end
 	row.userExpanded = not row.userExpanded
 	childrenFrame.Visible = row.userExpanded
-	if row.userExpanded then
-		buildChildren(row, instance, depth)   -- ← строим только сейчас
+
+	if row.userExpanded and not row.childrenBuilt then
+		row.childrenBuilt = true
+		local i = 0
+		for _, child in instance:GetChildren() do
+			i += 1
+			createRow(child, depth + 1, childrenFrame, row)
+			if i % 200 == 0 then task.wait() end
+		end
+		row.hasChildren = i > 0
 	end
+
 	arrow.Text = row.userExpanded and "v" or ">"
 end)
 
 	return row
-end
-
-local buildChildren
-
-buildChildren = function(row, instance, depth)
-	if row.childrenBuilt then return end
-	row.childrenBuilt = true
-
-	local i = 0
-	for _, child in instance:GetChildren() do
-		i += 1
-		createRow(child, depth + 1, row.childrenFrame, row)
-		if i % 200 == 0 then task.wait() end
-	end
-
-	row.hasChildren = i > 0
-	row.arrow.Text = row.hasChildren and ">" or ""
 end
 
 local roots = {
