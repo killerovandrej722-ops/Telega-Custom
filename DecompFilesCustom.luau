@@ -327,15 +327,10 @@ end)
 	return row
 end
 
-local roots = {
-	game:GetService("Workspace"),
-	game:GetService("ReplicatedStorage"),
-	game:GetService("StarterPlayer"),
-	game:GetService("StarterGui"),
-	game:GetService("Lighting"),
-	game:GetService("SoundService"),
-	game:GetService("ReplicatedFirst"),
-}
+local roots = {}
+for _, service in game:GetChildren() do
+	table.insert(roots, service)
+end
 
 local lp = Players.LocalPlayer
 local pg = lp and lp:FindFirstChild("PlayerGui")
