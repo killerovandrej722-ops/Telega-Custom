@@ -6090,7 +6090,6 @@ end
 
 		local ctx = collect(allRoots)
 
-		-- NEW: pre-count decompile targets
 		do
 			local function isServerScript(inst)
 				local isLS = inst:IsA("LocalScript")
@@ -6099,9 +6098,10 @@ end
 			end
 
 			TotalDecompile = 0
-			for inst in ctx.entries do
+			for inst, entry in ctx.entries do
 				if
-					inst:IsA("LuaSourceContainer")
+					not entry.virtual          -- <--- ГЛАВНАЯ ПРАВКА: отсекаем виртуальные таблицы
+					and inst:IsA("LuaSourceContainer")
 					and not decompileIgnoreMap[inst]
 					and not isServerScript(inst)
 				then
