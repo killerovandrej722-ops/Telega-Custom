@@ -306,30 +306,33 @@ local function createRow(instance, depth, parentFrame, parentRow)
 	row.hasChildren = hasChildren
 
 	arrowBtn.MouseButton1Click:Connect(function()
-		if not hasChildren then return end
-		row.userExpanded = not row.userExpanded
-		childrenFrame.Visible = row.userExpanded
-		arrow.Text = row.userExpanded and "v" or ">"
-	end)
+	if not hasChildren then return end
+	row.userExpanded = not row.userExpanded
+	childrenFrame.Visible = row.userExpanded
+	if row.userExpanded then
+		buildChildren(row, instance, depth)   -- ← строим только сейчас
+	end
+	arrow.Text = row.userExpanded and "v" or ">"
+end)
 
 	return row
 end
 
--- ============ BUILD TREE (eager, чтобы поиск работал вглубь) ============
-local function buildChildren(row, instance, depth)
+local buildChildren
+
+buildChildren = function(row, instance, depth)
+	if row.childrenBuilt then return end
+	row.childrenBuilt = true
+
 	local i = 0
 	for _, child in instance:GetChildren() do
 		i += 1
-		local childRow = createRow(child, depth + 1, row.childrenFrame, row)
-		buildChildren(childRow, child, depth + 1)
-		if i % 100 == 0 then
-			task.wait()
-		end
+		createRow(child, depth + 1, row.childrenFrame, row)
+		if i % 200 == 0 then task.wait() end
 	end
-	if #instance:GetChildren() > 0 then
-		row.arrow.Text = ">"
-		row.hasChildren = true
-	end
+
+	row.hasChildren = i > 0
+	row.arrow.Text = row.hasChildren and ">" or ""
 end
 
 local roots = {
@@ -350,8 +353,7 @@ end
 
 task.spawn(function()
 	for _, root in roots do
-		local row = createRow(root, 0, scroll, nil)
-		buildChildren(row, root, 0)
+		createRow(root, 0, scroll, nil)   -- только корень, дети — по клику
 		task.wait()
 	end
 end)
