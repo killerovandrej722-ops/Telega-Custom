@@ -3716,7 +3716,21 @@ local function synsaveinstance(...)
 
 	local totalsize = 0
 
-	local StatusText
+local StatusText
+local ProgressBarBg      -- NEW
+local ProgressBarFill    -- NEW
+local TotalDecompile, DoneDecompile = 0, 0  -- NEW
+
+-- NEW
+local function updateProgressBar()
+	if not ProgressBarFill then return end
+	if TotalDecompile <= 0 then return end
+	local r = math.clamp(DoneDecompile / TotalDecompile, 0, 1)
+	ProgressBarFill.Size = UDim2.new(r, 0, 1, 0)
+	ProgressBarFill.BackgroundColor3 = r >= 1
+			and Color3.fromRGB(100, 220, 100)
+		or Color3.fromRGB(90, 170, 255)
+end
 
 	local OPTIONS = {
 		mode = "optimized",
@@ -4613,18 +4627,25 @@ local function synsaveinstance(...)
 
 	if not OPTIONS.Decompile then
 		ldecompile = function()
+			DoneDecompile += 1
+			updateProgressBar()
 			return "-- Decompiling is disabled"
 		end
 	elseif decompile then
 		local decomp = makeTimeoutHandler(OPTIONS.DecompileTimeout, decompile, "Decompiler timed out")
 
 		ldecompile = function(script)
+            local result = _ldecompile_impl(script)
+			DoneDecompile += 1
+			updateProgressBar()
+			return result
 			-- local name = scr.ClassName .. scr.Name
 			local bytecode
 			if ScriptCache then
 				local s
 				s, bytecode = getbytecode(script)
 				local cached
+
 
 				if s then
 					if not bytecode or bytecode == "" then
@@ -4675,6 +4696,8 @@ local function synsaveinstance(...)
 		end
 	else
 		ldecompile = function()
+            DoneDecompile += 1
+			updateProgressBar()
 			return "-- Your Executor does NOT have a Decompiler"
 		end
 	end
@@ -4816,7 +4839,7 @@ local function synsaveinstance(...)
 			assetSourceBlock = "--[" .. eq .. "[\n" .. recoveredSource .. "\n]" .. eq .. "]\n\n"
 		end
 
-		value = "-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw\n\n"
+		value = "-- Saved by Killer Decomp\n\n"
 			.. (hasLinkedSource and "-- Original Source: https://assetdelivery.roblox.com/v1/asset/?" .. (linkedKey and string.find(
 				linkedKey,
 				"%a"
@@ -6057,6 +6080,28 @@ local function synsaveinstance(...)
 
 		local ctx = collect(allRoots)
 
+		-- NEW: pre-count decompile targets
+		do
+			local function isServerScript(inst)
+				local isLS = inst:IsA("LocalScript")
+				return (isLS and inst.RunContext == Enum.RunContext.Server)
+					or (not isLS and inst:IsA("Script") and inst.RunContext ~= Enum.RunContext.Client)
+			end
+
+			TotalDecompile = 0
+			for inst in ctx.entries do
+				if
+					inst:IsA("LuaSourceContainer")
+					and not decompileIgnoreMap[inst]
+					and not isServerScript(inst)
+				then
+					TotalDecompile += 1
+				end
+			end
+			DoneDecompile = 0
+			updateProgressBar()
+		end
+
 		-- collect filtered and deduped; recover each extra's surviving roots.
 		for _, extra in pendingExtras do
 			local src = extra.roots
@@ -6318,6 +6363,21 @@ local function synsaveinstance(...)
 		StatusText.TextYAlignment = Enum.TextYAlignment.Top
 
 		StatusText.Parent = StatusGui
+
+		-- NEW: progress bar
+		ProgressBarBg = Instance.new("Frame")
+		ProgressBarBg.Size = UDim2.new(0.3, 0, 0, 4)
+		ProgressBarBg.Position = UDim2.new(1, 0, 0, 22)
+		ProgressBarBg.AnchorPoint = Vector2.new(1, 0)
+		ProgressBarBg.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+		ProgressBarBg.BorderSizePixel = 0
+		ProgressBarBg.Parent = StatusGui
+
+		ProgressBarFill = Instance.new("Frame")
+		ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(90, 170, 255)
+		ProgressBarFill.BorderSizePixel = 0
+		ProgressBarFill.Parent = ProgressBarBg
 
 		local function randomString()
 			local length = math.random(10, 20)
@@ -6920,6 +6980,11 @@ local function synsaveinstance(...)
             task.wait(Log10 + ExtraTime)
         end
         StatusText:Destroy()
+		if ProgressBarBg then
+			ProgressBarBg:Destroy()
+			ProgressBarBg = nil
+			ProgressBarFill = nil
+		end
     end)
 end
 
