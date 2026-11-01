@@ -4705,6 +4705,12 @@ end
 			return result
 		end
 	else
+		ldecompile = function()
+			DoneDecompile += 1
+			updateProgressBar()
+			return "-- Your Executor does NOT have a Decompiler"
+		end
+	end
 
 	local RecoverScriptsFromAssets = OPTIONS.RecoverScriptsFromAssets
 	local sourceAssetCache = {}
