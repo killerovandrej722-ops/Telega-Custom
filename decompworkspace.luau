@@ -6358,7 +6358,7 @@ end
 
 		StatusText = Instance.new("TextLabel")
 
-				StatusText.Text = "Initializing..."
+		StatusText.Text = "Initializing..."
 		StatusText.BackgroundTransparency = 1
 		StatusText.Font = Enum.Font.GothamMedium -- Строгий, современный шрифт
 		StatusText.AnchorPoint = Vector2.new(1)
@@ -6373,14 +6373,25 @@ end
 
 		StatusText.Parent = StatusGui
 
-		-- Чистый прогресс-бар
 		ProgressBarBg = Instance.new("Frame")
-		ProgressBarBg.Size = UDim2.new(0.4, 0, 0, 4)
-		ProgressBarBg.Position = UDim2.new(1, -15, 0, 35)
+		ProgressBarBg.Size = UDim2.new(0, 260, 0, 6) -- Ширина 260 пикселей, высота 6 пикселей (чуть толще)
+		ProgressBarBg.Position = UDim2.new(1, -15, 0, 42) -- Опустили ниже текста (Y=42) и выровняли по правому краю
 		ProgressBarBg.AnchorPoint = Vector2.new(1, 0)
 		ProgressBarBg.BackgroundColor3 = Color3.fromRGB(35, 35, 40) -- Темно-серый фон
 		ProgressBarBg.BorderSizePixel = 0
 		ProgressBarBg.Parent = StatusGui
+		
+		local corner = Instance.new("UICorner", ProgressBarBg)
+		corner.CornerRadius = UDim.new(1, 0)
+
+		ProgressBarFill = Instance.new("Frame")
+		ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+		ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- Спокойный синий
+		ProgressBarFill.BorderSizePixel = 0
+		ProgressBarFill.Parent = ProgressBarBg
+		
+		local fillCorner = Instance.new("UICorner", ProgressBarFill)
+		fillCorner.CornerRadius = UDim.new(1, 0)
 		
 		local corner = Instance.new("UICorner", ProgressBarBg)
 		corner.CornerRadius = UDim.new(1, 0)
