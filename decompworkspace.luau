@@ -6964,32 +6964,30 @@ end
 		})
 
 		ensureProp("WeldConstraint", {
-			Name = "CFrame0",
-			Category = "DataType",
-			ValueType = "OptionalCoordinateFrame",
-			Optional = "CoordinateFrame",
-			Special = true,
-			Fallback = function(instance)
-				local p0, p1 = instance.Part0, instance.Part1
-				if p0 and p1 then
-					return p0.CFrame:ToObjectSpace(p1.CFrame)
-				end
-			end,
-		})
+    Name = "CFrame0",
+    Category = "DataType",
+    ValueType = "CFrame",                    -- ✅ обычный CFrame
+    Special = true,
+    Fallback = function(instance)
+        local p0, p1 = instance.Part0, instance.Part1
+        if p0 and p1 then
+            return p0.CFrame:ToObjectSpace(p1.CFrame)
+        end
+    end,
+})
 
-		ensureProp("WeldConstraint", {
-			Name = "CFrame1",
-			Category = "DataType",
-			ValueType = "OptionalCoordinateFrame",
-			Optional = "CoordinateFrame",
-			Special = true,
-			Fallback = function(instance)
-				local p0, p1 = instance.Part0, instance.Part1
-				if p0 and p1 then
-					return p1.CFrame:ToObjectSpace(p0.CFrame)
-				end
-			end,
-		})
+ensureProp("WeldConstraint", {
+    Name = "CFrame1",
+    Category = "DataType",
+    ValueType = "CFrame",                    -- ✅ обычный CFrame
+    Special = true,
+    Fallback = function(instance)
+        local p0, p1 = instance.Part0, instance.Part1
+        if p0 and p1 then
+            return p1.CFrame:ToObjectSpace(p0.CFrame)
+        end
+    end,
+})
 
 		ensureProp("WeldConstraint", {
 			Name = "State",
