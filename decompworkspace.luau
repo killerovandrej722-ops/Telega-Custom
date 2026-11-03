@@ -5093,7 +5093,9 @@ end
 			if gethiddenproperty_fallback then
 				ok, result = pcall(gethiddenproperty_fallback, instance, PropertyName)
 			end
-			if result == nil and not nilIsValid(Category, Optional) then
+			if result == nil and (Category == "Class" or not nilIsValid(Category, Optional)) then
+				-- * UGC всегда возвращает nil для ссылок на Instance (см. комментарий выше) --
+				-- * nil для Class здесь НЕ валиден: это "не смогли прочитать", а не "пустая ссылка" --
 				ok = nil
 			end
 			if ok then
@@ -6927,6 +6929,86 @@ end
 			end
 		end
 	end
+	do -- * Гарантируем сериализацию WeldConstraint, даже если API-дамп не содержит его NotScriptable-проперти
+		local function ensureProp(className, prop)
+			local classInfo = ClassList[className]
+			if not classInfo then
+				return
+			end
+			for _, existing in classInfo.Properties do
+				if existing.Name == prop.Name then
+					return -- уже есть в дампе (там уже висят NotScriptableFixes)
+				end
+			end
+			table.insert(classInfo.Properties, prop)
+		end
+
+		ensureProp("WeldConstraint", {
+			Name = "Part0Internal",
+			Category = "Class",
+			ValueType = "Instance",
+			Special = true,
+			Fallback = function(instance)
+				return instance.Part0
+			end,
+		})
+
+		ensureProp("WeldConstraint", {
+			Name = "Part1Internal",
+			Category = "Class",
+			ValueType = "Instance",
+			Special = true,
+			Fallback = function(instance)
+				return instance.Part1
+			end,
+		})
+
+		ensureProp("WeldConstraint", {
+			Name = "CFrame0",
+			Category = "DataType",
+			ValueType = "OptionalCoordinateFrame",
+			Optional = "CoordinateFrame",
+			Special = true,
+			Fallback = function(instance)
+				local p0, p1 = instance.Part0, instance.Part1
+				if p0 and p1 then
+					return p0.CFrame:ToObjectSpace(p1.CFrame)
+				end
+			end,
+		})
+
+		ensureProp("WeldConstraint", {
+			Name = "CFrame1",
+			Category = "DataType",
+			ValueType = "OptionalCoordinateFrame",
+			Optional = "CoordinateFrame",
+			Special = true,
+			Fallback = function(instance)
+				local p0, p1 = instance.Part0, instance.Part1
+				if p0 and p1 then
+					return p1.CFrame:ToObjectSpace(p0.CFrame)
+				end
+			end,
+		})
+
+		ensureProp("WeldConstraint", {
+			Name = "State",
+			Category = "DataType",
+			ValueType = "int",
+			Special = true,
+			Fallback = function(instance)
+				local state = 0
+				if instance.Enabled then
+					state += 1
+				end
+				if instance.Active then
+					state += 2
+				end
+				return state
+			end,
+		})
+	end
+
 	local old_gethiddenproperty
 	if OPTIONS.IgnoreSpecialProperties and gethiddenproperty then
 		old_gethiddenproperty = gethiddenproperty
