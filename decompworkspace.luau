@@ -4310,11 +4310,12 @@ end
 				end
 			end
 
-			local PlaceName = cachedPlaceName and (game.PlaceId .. " " .. cachedPlaceName) or game.PlaceId
+				local PlaceName = cachedPlaceName and (game.PlaceId .. " " .. cachedPlaceName) or game.PlaceId
+			local FILE_PREFIX = "[KILLER DECOMP] "
 			if IsModel then
-				placename = sanitizeFileName("model " .. PlaceName .. " " .. (Object or tmp[1] or game):GetFullName())
+				placename = FILE_PREFIX .. sanitizeFileName("model " .. PlaceName .. " " .. (Object or tmp[1] or game):GetFullName())
 			else
-				placename = sanitizeFileName("place " .. PlaceName)
+				placename = FILE_PREFIX .. sanitizeFileName("place " .. PlaceName)
 			end
 		end
 
