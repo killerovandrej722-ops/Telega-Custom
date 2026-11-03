@@ -3793,6 +3793,7 @@ end
 		IsolatePlayers = false,
 		IsolateStarterPlayer = false,
 		SavePlayerCharacters = true,
+		SaveWeldConstraints = true, -- Сохранять WeldConstraint/Weld/Motor6D и их Part0/Part1, даже в игнорируемых иерархиях
 
 		SaveNotCreatable = false,
 		NotCreatableFixes = {
@@ -6944,6 +6945,43 @@ end
 					end)
 					yieldIfDue()
 				end
+			end
+		end
+	end
+
+	do -- * SaveWeldConstraints: принудительно сохраняем все констрейнты и их Part0/Part1
+		if OPTIONS.SaveWeldConstraints then
+			local weldCount = 0
+			local lastWeldYield = os.clock()
+
+			local function keep(inst)
+				if IgnoreList[inst] then
+					IgnoreList[inst] = nil
+				end
+				table.insert(ToSaveList, inst)
+			end
+
+			for _, inst in game:GetDescendants() do
+				if inst:IsA("JointInstance") or inst:IsA("WeldConstraint") then
+					keep(inst)
+					local p0 = inst.Part0
+					local p1 = inst.Part1
+					if p0 then
+						keep(p0)
+					end
+					if p1 then
+						keep(p1)
+					end
+					weldCount += 1
+				end
+				if os.clock() - lastWeldYield > 5 then
+					task.wait()
+					lastWeldYield = os.clock()
+				end
+			end
+
+			if __DEBUG_MODE then
+				__DEBUG_MODE("SaveWeldConstraints: collected constraints:", weldCount)
 			end
 		end
 	end
