@@ -4849,17 +4849,22 @@ end
 			assetSourceBlock = "--[" .. eq .. "[\n" .. recoveredSource .. "\n]" .. eq .. "]\n\n"
 		end
 
-		value = "-- Saved by Killer Decomp\n\n"
-			.. (hasLinkedSource and "-- Original Source: https://assetdelivery.roblox.com/v1/asset/?" .. (linkedKey and string.find(
-				linkedKey,
-				"%a"
-			) and "hash" or "id") .. "=" .. (linkedKey or linkedSourceRaw) .. "\n\n" or "")
-			.. (recoveredAssetId and "-- Original SourceAssetId: https://assetdelivery.roblox.com/v1/asset/?id=" .. recoveredAssetId .. "\n\n" or "")
-			.. (recoveredAssetId and "-- ! Source from the asset above; the game may have edited it since.\n\n" or "")
-			.. assetSourceBlock
-			.. value
+value = "-- ██╗░░██╗██╗██╗░░░░░██╗░░░░░███████╗██████╗░  ██████╗░███████╗░█████╗░░█████╗░███╗░░░███╗██████╗\n"
+    .. "-- ██║░██╔╝██║██║░░░░░██║░░░░░██╔════╝██╔══██╗  ██╔══██╗██╔════╝██╔══██╗██╔══██╗████╗░████║██╔══██╗\n"
+    .. "-- █████═╝░██║██║░░░░░██║░░░░░█████╗░░██████╔╝  ██║░░██║█████╗░░██║░░╚═╝██║░░██║██╔████╔██║██████╔╝\n"
+    .. "-- ██╔═██╗░██║██║░░░░░██║░░░░░██╔══╝░░██╔══██╗  ██║░░██║██╔══╝░░██║░░██╗██║░░██║██║╚██╔╝██║██╔═══╝░\n"
+    .. "-- ██║░╚██╗██║███████╗███████╗███████╗██║░░██║  ██████╔╝███████╗╚█████╔╝╚█████╔╝██║░╚═╝░██║██║░░░░░\n"
+    .. "-- ╚═╝░░╚═╝╚═╝╚══════╝╚══════╝╚══════╝╚═╝░░╚═╝  ╚═════╝░╚══════╝░╚════╝░░╚════╝░╚═╝░░░░░╚═╝╚═╝░░░░░\n\n"
+    .. (hasLinkedSource and "-- Original Source: https://assetdelivery.roblox.com/v1/asset/?" .. (linkedKey and string.find(
+        linkedKey,
+        "%a"
+    ) and "hash" or "id") .. "=" .. (linkedKey or linkedSourceRaw) .. "\n\n" or "")
+    .. (recoveredAssetId and "-- Original SourceAssetId: https://assetdelivery.roblox.com/v1/asset/?id=" .. recoveredAssetId .. "\n\n" or "")
+    .. (recoveredAssetId and "-- ! Source from the asset above; the game may have edited it since.\n\n" or "")
+    .. assetSourceBlock
+    .. value
 
-		return value
+return value
 	end
 
 	local function replaceClassName(instance, InstanceName, ClassName)
