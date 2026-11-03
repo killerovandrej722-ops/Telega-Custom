@@ -3793,7 +3793,6 @@ end
 		IsolatePlayers = false,
 		IsolateStarterPlayer = false,
 		SavePlayerCharacters = true,
-		SaveWeldConstraints = true, -- Сохранять WeldConstraint/Weld/Motor6D и их Part0/Part1, даже в игнорируемых иерархиях
 
 		SaveNotCreatable = false,
 		NotCreatableFixes = {
