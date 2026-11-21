@@ -63,7 +63,7 @@ do
 	local filename = "StreamBuffer"
 
 	StreamBuffer = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/" .. filename .. ".luau", true),
+		game:HttpGet("https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/" .. filename .. ".luau?v=111", true),
 		filename
 	)()
 end
@@ -74,7 +74,7 @@ do
 
 	local finder
 	finder, global_container = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/" .. filename .. ".luau", true),
+		game:HttpGet("https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/" .. filename .. ".luau?v=111", true),
 		filename
 	)()
 
