@@ -63,7 +63,7 @@ do
 	local filename = "StreamBuffer"
 
 	StreamBuffer = loadstring(
-		game:HttpGet("https://raw.githubusercontent.com/luau/SomeHub/main/" .. filename .. ".luau", true),
+		game:HttpGet("https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/" .. filename .. ".luau", true),
 		filename
 	)()
 end
