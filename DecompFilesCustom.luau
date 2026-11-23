@@ -1,8 +1,9 @@
+-- The exporter is loaded only after the user presses Start.
+-- This keeps the interface startup separate from remote module execution.
 local Params = {
 	RepoURL = "https://raw.githubusercontent.com/killerovandrej722-ops/Telega-Custom/refs/heads/main/",
 	SSI = "decompworkspace",
 }
-local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau?v=111", true), Params.SSI)()
 
 local selected = {}
 
@@ -518,7 +519,32 @@ startBtn.MouseButton1Click:Connect(function()
         config.IsolateLocalPlayer = true
     end
 
+    startBtn.Text = "loading exporter..."
+    startBtn.Active = false
+    startBtn.AutoButtonColor = false
+
+    local loadOk, exporterOrError = pcall(function()
+        local source = game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau?v=111", true)
+        local chunk, compileError = loadstring(source, Params.SSI)
+        if not chunk then
+            error(compileError or "Could not compile exporter")
+        end
+        return chunk()
+    end)
+
+    if not loadOk or type(exporterOrError) ~= "function" then
+        warn("Exporter load failed:", exporterOrError)
+        startBtn.Text = "load failed - check console"
+        startBtn.Active = true
+        return
+    end
+
     gui:Destroy()
-    synsaveinstance(config)
+    local runOk, runError = pcall(function()
+        exporterOrError(config)
+    end)
+    if not runOk then
+        warn("Exporter failed:", runError)
+    end
 end)
 
