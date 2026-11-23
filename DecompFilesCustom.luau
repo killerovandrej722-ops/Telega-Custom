@@ -25,8 +25,8 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = (gethui and gethui()) or CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 460, 0, 560)
-frame.Position = UDim2.new(0.5, -230, 0.5, -280)
+frame.Size = UDim2.new(0, 500, 0, 720)
+frame.Position = UDim2.new(0.5, -250, 0.5, -360)
 frame.BackgroundColor3 = COL_BG
 frame.BorderSizePixel = 0
 frame.Parent = gui
@@ -126,7 +126,7 @@ Instance.new("UIPadding", searchBox).PaddingLeft = UDim.new(0, 10)
 
 -- ============ LIST ============
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -24, 1, -140)
+scroll.Size = UDim2.new(1, -24, 0, 410)
 scroll.Position = UDim2.new(0, 12, 0, 88)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
@@ -140,6 +140,92 @@ local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 2)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Parent = scroll
+
+-- ============ EXPORT OPTIONS ============
+local optionsPanel = Instance.new("Frame")
+optionsPanel.Size = UDim2.new(1, -24, 0, 142)
+optionsPanel.Position = UDim2.new(0, 12, 0, 508)
+optionsPanel.BackgroundColor3 = COL_PANEL
+optionsPanel.BorderSizePixel = 0
+optionsPanel.Parent = frame
+Instance.new("UICorner", optionsPanel).CornerRadius = UDim.new(0, 5)
+
+local optionsStroke = Instance.new("UIStroke", optionsPanel)
+optionsStroke.Color = COL_LINE
+optionsStroke.Thickness = 1
+
+local optionsTitle = Instance.new("TextLabel")
+optionsTitle.Size = UDim2.new(1, -20, 0, 24)
+optionsTitle.Position = UDim2.new(0, 10, 0, 5)
+optionsTitle.BackgroundTransparency = 1
+optionsTitle.Text = "EXPORT OPTIONS"
+optionsTitle.TextColor3 = COL_DIM
+optionsTitle.Font = Enum.Font.Code
+optionsTitle.TextSize = 11
+optionsTitle.TextXAlignment = Enum.TextXAlignment.Left
+optionsTitle.Parent = optionsPanel
+
+local options = {
+    Decompile = true,
+    IncludeCharacter = false,
+    IsModel = false,
+    BoostFPS = true,
+    KillAllScripts = false,
+}
+
+local function createToggle(label, key, x, y, width)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, width, 0, 28)
+    button.Position = UDim2.new(0, x, 0, y)
+    button.BackgroundColor3 = COL_ROW
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = false
+    button.Text = ""
+    button.Parent = optionsPanel
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 4)
+
+    local mark = Instance.new("TextLabel")
+    mark.Size = UDim2.new(0, 20, 1, 0)
+    mark.Position = UDim2.new(0, 7, 0, 0)
+    mark.BackgroundTransparency = 1
+    mark.Font = Enum.Font.Code
+    mark.TextSize = 13
+    mark.TextColor3 = COL_TEXT
+    mark.Parent = button
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -34, 1, 0)
+    textLabel.Position = UDim2.new(0, 30, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = label
+    textLabel.TextColor3 = COL_TEXT
+    textLabel.Font = Enum.Font.Code
+    textLabel.TextSize = 11
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    textLabel.Parent = button
+
+    local function redraw()
+        mark.Text = options[key] and "[x]" or "[ ]"
+        button.BackgroundColor3 = options[key] and COL_ROW_SEL or COL_ROW
+    end
+
+    button.MouseButton1Click:Connect(function()
+        options[key] = not options[key]
+        redraw()
+    end)
+    button.MouseEnter:Connect(function()
+        if not options[key] then button.BackgroundColor3 = Color3.fromRGB(50, 50, 53) end
+    end)
+    button.MouseLeave:Connect(redraw)
+    redraw()
+end
+
+createToggle("Декомпилировать скрипты", "Decompile", 10, 34, 228)
+createToggle("Добавить персонажа", "IncludeCharacter", 250, 34, 226)
+createToggle("Сохранить как модель", "IsModel", 10, 68, 228)
+createToggle("Оптимизация FPS", "BoostFPS", 250, 68, 226)
+createToggle("Отключить скрипты в копии", "KillAllScripts", 10, 102, 466)
 
 -- ============ FOOTER ============
 local footerLine = Instance.new("Frame")
@@ -392,24 +478,47 @@ end)
 
 -- ============ START ============
 startBtn.MouseButton1Click:Connect(function()
-	local list = {}
-	for inst in selected do
-		table.insert(list, inst)
-	end
-	if #list == 0 then
-		return warn("Nothing selected!")
-	end
-	gui:Destroy()
-	synsaveinstance({
-	mode = "custom",
-	ExtraInstances = list,
-	IsModel = false,
-	KillAllScripts = false,     -- явно, на случай если кто-то поменяет SafeMode
-	BoostFPS = true,            -- отключает 3D-рендер на время сохранения (безвредно)
-	Decompile = true,
-	DecompileTimeout = 2,       -- было 10; 2 сек достаточно для большинства скриптов
-	BytecodeTimeout = 1,
-	-- оставь только если LocalPlayer реально в списке selected:
-	IsolateLocalPlayer = true,
-})
+    local list = {}
+    local added = {}
+
+    local function addInstance(inst)
+        if inst and not added[inst] then
+            added[inst] = true
+            table.insert(list, inst)
+        end
+    end
+
+    for inst in selected do
+        addInstance(inst)
+    end
+
+    -- A character is an Instance/model to include in the export, not something
+    -- that can itself be decompiled like a Lua script.
+    if options.IncludeCharacter and lp and lp.Character then
+        addInstance(lp.Character)
+    end
+
+    if #list == 0 then
+        return warn("Nothing selected! Select an item or enable Include LocalPlayer character.")
+    end
+
+    local config = {
+        mode = "custom",
+        ExtraInstances = list,
+        IsModel = options.IsModel,
+        KillAllScripts = options.KillAllScripts,
+        BoostFPS = options.BoostFPS,
+        Decompile = options.Decompile,
+        DecompileTimeout = 2,
+        BytecodeTimeout = 1,
+    }
+
+    -- Only enable isolation when the LocalPlayer character is explicitly included.
+    if options.IncludeCharacter then
+        config.IsolateLocalPlayer = true
+    end
+
+    gui:Destroy()
+    synsaveinstance(config)
 end)
+
